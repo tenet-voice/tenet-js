@@ -1,0 +1,27 @@
+{
+  "name": "@tenet-ai/sdk",
+  "version": "0.1.0",
+  "description": "Route OpenAI-compatible LLM calls through Tenet for production observability",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "openai": ">=4.0.0"
+  },
+  "devDependencies": {
+    "openai": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^2.0.0"
+  },
+  "license": "MIT"
+}
