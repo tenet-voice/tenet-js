@@ -19,7 +19,7 @@
     "openai": ">=4.0.0"
   },
   "devDependencies": {
-    "openai": "^4.0.0",
+    "openai": "^4.104.0",
     "typescript": "^5.0.0",
     "vitest": "^2.0.0"
   },

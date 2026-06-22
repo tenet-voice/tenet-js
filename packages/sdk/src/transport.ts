@@ -22,8 +22,13 @@ export function createTenetFetch(opts: TenetFetchOptions): typeof fetch {
   return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const originalUrl = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
 
-    const path = new URL(originalUrl).pathname;
-    const proxyTarget = proxyUrl + path;
+    const parsedOriginal = new URL(originalUrl);
+    const path = parsedOriginal.pathname;
+
+    // The request already points at the proxy (baseURL was swapped).
+    // Reconstruct the original provider URL by swapping the host back.
+    const parsedOriginalBase = new URL(originalBaseUrl);
+    const providerUrl = `${parsedOriginalBase.protocol}//${parsedOriginalBase.host}${path}`;
 
     const headers: Record<string, string> = {};
     if (init?.headers) {
@@ -37,7 +42,7 @@ export function createTenetFetch(opts: TenetFetchOptions): typeof fetch {
     }
 
     headers["X-Tenet-Key"] = tenetKey;
-    headers["X-Provider-URL"] = originalUrl;
+    headers["X-Provider-URL"] = providerUrl;
 
     const callerId = getCallerId?.();
     if (callerId) {
@@ -45,18 +50,18 @@ export function createTenetFetch(opts: TenetFetchOptions): typeof fetch {
     }
 
     try {
-      const response = await innerFetch(proxyTarget, { ...init, headers });
+      const response = await innerFetch(originalUrl, { ...init, headers });
 
       if (response.status >= 500 && failover && fallbackFetch) {
         reportTelemetry(proxyUrl, tenetKey, `proxy returned ${response.status}`, callerId);
-        return fallbackFetch(originalUrl, init);
+        return fallbackFetch(providerUrl, init);
       }
 
       return response;
     } catch (err) {
       if (failover && fallbackFetch) {
         reportTelemetry(proxyUrl, tenetKey, String(err), callerId);
-        return fallbackFetch(originalUrl, init);
+        return fallbackFetch(providerUrl, init);
       }
       throw err;
     }

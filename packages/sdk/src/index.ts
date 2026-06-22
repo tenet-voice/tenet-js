@@ -15,7 +15,7 @@ const callerIds = new WeakMap<object, string>();
 
 export function wrap<T extends object>(client: T, opts: WrapOptions): T {
   const c = client as any;
-  const originalFetch = c._fetch ?? globalThis.fetch;
+  const originalFetch = c.fetch ?? c._fetch ?? globalThis.fetch;
   const originalBaseUrl = (c.baseURL ?? "https://api.openai.com/v1").replace(/\/$/, "");
   const proxyUrl = (opts.proxyUrl ?? DEFAULT_PROXY_URL).replace(/\/$/, "");
 
@@ -31,8 +31,10 @@ export function wrap<T extends object>(client: T, opts: WrapOptions): T {
     getCallerId: () => callerIds.get(client),
   });
 
-  c._fetch = tenetFetch;
-  c.baseURL = proxyUrl;
+  c.fetch = tenetFetch;
+  // Preserve the path from the original base URL (e.g. /v1)
+  const originalPath = new URL(originalBaseUrl).pathname.replace(/\/$/, "");
+  c.baseURL = proxyUrl + originalPath;
 
   return client;
 }

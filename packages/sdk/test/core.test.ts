@@ -19,7 +19,8 @@ describe("createTenetFetch", () => {
       failover: false,
     });
 
-    await fetch("https://api.openai.com/v1/chat/completions", { method: "POST", body: "{}" });
+    // After wrap(), the OpenAI client sends to the proxy URL (baseURL was swapped)
+    await fetch("https://inference.trytenet.ai/v1/chat/completions", { method: "POST", body: "{}" });
 
     const calledUrl = inner.mock.calls[0][0];
     expect(calledUrl).toBe("https://inference.trytenet.ai/v1/chat/completions");
