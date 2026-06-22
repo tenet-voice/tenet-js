@@ -28,7 +28,8 @@ export function createTenetFetch(opts: TenetFetchOptions): typeof fetch {
     // The request already points at the proxy (baseURL was swapped).
     // Reconstruct the original provider URL by swapping the host back.
     const parsedOriginalBase = new URL(originalBaseUrl);
-    const providerUrl = `${parsedOriginalBase.protocol}//${parsedOriginalBase.host}${path}`;
+    const queryString = parsedOriginal.search;
+    const providerUrl = `${parsedOriginalBase.protocol}//${parsedOriginalBase.host}${path}${queryString}`;
 
     const headers: Record<string, string> = {};
     if (init?.headers) {
