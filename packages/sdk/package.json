@@ -1,5 +1,5 @@
 {
-  "name": "@tenet-ai/sdk",
+  "name": "@tenet-voice/sdk",
   "version": "0.1.0",
   "description": "Route OpenAI-compatible LLM calls through Tenet for production observability",
   "type": "module",

@@ -1,4 +1,4 @@
-import { wrap, setCallerId } from "@tenet-ai/sdk";
+import { wrap, setCallerId } from "@tenet-voice/sdk";
 
 interface TenetLLMOptions {
   tenetKey: string;
