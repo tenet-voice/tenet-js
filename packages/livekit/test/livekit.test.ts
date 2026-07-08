@@ -22,11 +22,11 @@ describe("TenetLLM", () => {
     expect(inner.chat).toHaveBeenCalledWith({ chatCtx: "ctx" });
   });
 
-  it("sets caller ID from participant", () => {
+  it("sets session ID from participant", () => {
     const inner = mockLLM();
     const llm = new TenetLLM({ tenetKey: "tk_xxx", llm: inner });
     llm.setParticipant({ identity: "caller_456" });
-    expect(llm.callerId).toBe("caller_456");
+    expect(llm.sessionId).toBe("caller_456");
   });
 
   it("sets room metadata", () => {

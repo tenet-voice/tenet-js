@@ -1,4 +1,4 @@
-import { wrap, setCallerId } from "@tenet-voice/sdk";
+import { wrap, setSessionId } from "@tenet-voice/sdk";
 
 interface TenetLLMOptions {
   tenetKey: string;
@@ -11,7 +11,7 @@ export class TenetLLM {
   readonly tenetKey: string;
   private _innerLLM: any;
   private _wrapped = false;
-  private _callerId?: string;
+  private _sessionId?: string;
   private _roomName?: string;
   private _roomSid?: string;
   private _failover: boolean;
@@ -24,14 +24,14 @@ export class TenetLLM {
     this._proxyUrl = opts.proxyUrl ?? "https://inference.trytenet.ai";
   }
 
-  get callerId() { return this._callerId; }
+  get sessionId() { return this._sessionId; }
   get roomName() { return this._roomName; }
   get roomSid() { return this._roomSid; }
 
   setParticipant(participant: { identity: string }) {
-    this._callerId = participant.identity;
+    this._sessionId = participant.identity;
     if (this._wrapped && this._innerLLM._client) {
-      setCallerId(this._innerLLM._client, this._callerId);
+      setSessionId(this._innerLLM._client, this._sessionId);
     }
   }
 

@@ -9,9 +9,12 @@ interface WrapOptions {
   failover?: boolean;
   proxyUrl?: string;
   timeout?: number;
+  sessionId?: string;
+  sessionTags?: string[];
 }
 
-const callerIds = new WeakMap<object, string>();
+const sessionIds = new WeakMap<object, string>();
+const sessionTagsMap = new WeakMap<object, string[]>();
 
 export function wrap<T extends object>(client: T, opts: WrapOptions): T {
   const c = client as any;
@@ -21,6 +24,13 @@ export function wrap<T extends object>(client: T, opts: WrapOptions): T {
 
   const fallbackFetch = opts.failover !== false ? originalFetch : undefined;
 
+  if (opts.sessionId) {
+    sessionIds.set(client, opts.sessionId);
+  }
+  if (opts.sessionTags) {
+    sessionTagsMap.set(client, opts.sessionTags);
+  }
+
   const tenetFetch = createTenetFetch({
     innerFetch: originalFetch,
     tenetKey: opts.tenetKey,
@@ -28,7 +38,8 @@ export function wrap<T extends object>(client: T, opts: WrapOptions): T {
     originalBaseUrl,
     failover: opts.failover !== false,
     fallbackFetch,
-    getCallerId: () => callerIds.get(client),
+    getSessionId: () => sessionIds.get(client),
+    getSessionTags: () => sessionTagsMap.get(client),
   });
 
   c.fetch = tenetFetch;
@@ -39,10 +50,18 @@ export function wrap<T extends object>(client: T, opts: WrapOptions): T {
   return client;
 }
 
-export function setCallerId(client: object, callerId: string) {
-  callerIds.set(client, callerId);
+export function setSessionId(client: object, sessionId: string) {
+  sessionIds.set(client, sessionId);
 }
 
-export function clearCallerId(client: object) {
-  callerIds.delete(client);
+export function clearSessionId(client: object) {
+  sessionIds.delete(client);
+}
+
+export function setSessionTags(client: object, sessionTags: string[]) {
+  sessionTagsMap.set(client, sessionTags);
+}
+
+export function clearSessionTags(client: object) {
+  sessionTagsMap.delete(client);
 }

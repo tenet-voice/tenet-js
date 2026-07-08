@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { wrap, setCallerId, clearCallerId, createTenetFetch } from "../src/index.js";
+import { wrap, setSessionId, clearSessionId, setSessionTags, clearSessionTags, createTenetFetch } from "../src/index.js";
 
 function mockFetch(status = 200, body: any = { choices: [{ message: { content: "Hi" } }] }) {
   return vi.fn().mockResolvedValue(new Response(JSON.stringify(body), {
@@ -85,25 +85,25 @@ describe("createTenetFetch", () => {
     expect(headers["X-Provider-URL"]).toBe("https://api.groq.com/openai/v1/chat/completions");
   });
 
-  it("injects X-Caller-ID when set", async () => {
+  it("injects X-Tenet-Session-Id when set", async () => {
     const inner = mockFetch();
-    const state = { callerId: "caller_123" };
+    const state = { sessionId: "caller_123" };
     const fetch = createTenetFetch({
       innerFetch: inner,
       tenetKey: "tk_xxx",
       proxyUrl: "https://inference.trytenet.ai",
       originalBaseUrl: "https://api.openai.com/v1",
       failover: false,
-      getCallerId: () => state.callerId,
+      getSessionId: () => state.sessionId,
     });
 
     await fetch("https://api.openai.com/v1/chat/completions", { method: "POST", body: "{}" });
 
     const headers = inner.mock.calls[0][1].headers;
-    expect(headers["X-Caller-ID"]).toBe("caller_123");
+    expect(headers["X-Tenet-Session-Id"]).toBe("caller_123");
   });
 
-  it("omits X-Caller-ID when not set", async () => {
+  it("omits X-Tenet-Session-Id when not set", async () => {
     const inner = mockFetch();
     const fetch = createTenetFetch({
       innerFetch: inner,
@@ -116,7 +116,41 @@ describe("createTenetFetch", () => {
     await fetch("https://api.openai.com/v1/chat/completions", { method: "POST", body: "{}" });
 
     const headers = inner.mock.calls[0][1].headers;
-    expect(headers["X-Caller-ID"]).toBeUndefined();
+    expect(headers["X-Tenet-Session-Id"]).toBeUndefined();
+  });
+
+  it("injects X-Tenet-Session-Tags joined by comma when set", async () => {
+    const inner = mockFetch();
+    const state = { sessionTags: ["beta", "internal"] };
+    const fetch = createTenetFetch({
+      innerFetch: inner,
+      tenetKey: "tk_xxx",
+      proxyUrl: "https://inference.trytenet.ai",
+      originalBaseUrl: "https://api.openai.com/v1",
+      failover: false,
+      getSessionTags: () => state.sessionTags,
+    });
+
+    await fetch("https://api.openai.com/v1/chat/completions", { method: "POST", body: "{}" });
+
+    const headers = inner.mock.calls[0][1].headers;
+    expect(headers["X-Tenet-Session-Tags"]).toBe("beta,internal");
+  });
+
+  it("omits X-Tenet-Session-Tags when not set", async () => {
+    const inner = mockFetch();
+    const fetch = createTenetFetch({
+      innerFetch: inner,
+      tenetKey: "tk_xxx",
+      proxyUrl: "https://inference.trytenet.ai",
+      originalBaseUrl: "https://api.openai.com/v1",
+      failover: false,
+    });
+
+    await fetch("https://api.openai.com/v1/chat/completions", { method: "POST", body: "{}" });
+
+    const headers = inner.mock.calls[0][1].headers;
+    expect(headers["X-Tenet-Session-Tags"]).toBeUndefined();
   });
 
   it("falls back on 5xx when failover enabled", async () => {
