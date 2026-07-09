@@ -5,7 +5,8 @@ export interface TenetFetchOptions {
   originalBaseUrl: string;
   failover: boolean;
   fallbackFetch?: typeof fetch;
-  getCallerId?: () => string | undefined;
+  getSessionId?: () => string | undefined;
+  getSessionTags?: () => string[] | undefined;
 }
 
 export function createTenetFetch(opts: TenetFetchOptions): typeof fetch {
@@ -16,7 +17,8 @@ export function createTenetFetch(opts: TenetFetchOptions): typeof fetch {
     originalBaseUrl,
     failover,
     fallbackFetch,
-    getCallerId,
+    getSessionId,
+    getSessionTags,
   } = opts;
 
   return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -45,23 +47,28 @@ export function createTenetFetch(opts: TenetFetchOptions): typeof fetch {
     headers["X-Tenet-Key"] = tenetKey;
     headers["X-Provider-URL"] = providerUrl;
 
-    const callerId = getCallerId?.();
-    if (callerId) {
-      headers["X-Caller-ID"] = callerId;
+    const sessionId = getSessionId?.();
+    if (sessionId) {
+      headers["X-Tenet-Session-Id"] = sessionId;
+    }
+
+    const sessionTags = getSessionTags?.();
+    if (sessionTags && sessionTags.length > 0) {
+      headers["X-Tenet-Session-Tags"] = sessionTags.join(",");
     }
 
     try {
       const response = await innerFetch(originalUrl, { ...init, headers });
 
       if (response.status >= 500 && failover && fallbackFetch) {
-        reportTelemetry(proxyUrl, tenetKey, `proxy returned ${response.status}`, callerId);
+        reportTelemetry(proxyUrl, tenetKey, `proxy returned ${response.status}`, sessionId);
         return fallbackFetch(providerUrl, init);
       }
 
       return response;
     } catch (err) {
       if (failover && fallbackFetch) {
-        reportTelemetry(proxyUrl, tenetKey, String(err), callerId);
+        reportTelemetry(proxyUrl, tenetKey, String(err), sessionId);
         return fallbackFetch(providerUrl, init);
       }
       throw err;
@@ -69,11 +76,11 @@ export function createTenetFetch(opts: TenetFetchOptions): typeof fetch {
   };
 }
 
-function reportTelemetry(proxyUrl: string, tenetKey: string, error: string, callerId?: string) {
+function reportTelemetry(proxyUrl: string, tenetKey: string, error: string, sessionId?: string) {
   const body = JSON.stringify({
     type: "failover",
     timestamp: new Date().toISOString(),
-    caller_id: callerId ?? "",
+    caller_id: sessionId ?? "",
     error,
   });
 

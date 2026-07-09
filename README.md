@@ -57,6 +57,29 @@ const llm = new TenetLLM({
 | `failover` | `true` | Fall back to direct provider on proxy failure |
 | `proxyUrl` | `https://inference.trytenet.ai` | Custom proxy URL (self-hosted) |
 | `timeout` | `5000` | Connection timeout in milliseconds |
+| `sessionId` | none | Sticky session/caller identifier for A/B routing |
+| `sessionTags` | none | Tags describing the session (e.g. `["beta", "internal"]`) |
+
+## Session Tracking
+
+Set `sessionId` at wrap time, or update it per-call with `setSessionId`/`clearSessionId`. Session tags work the same way via `setSessionTags`/`clearSessionTags`:
+
+```typescript
+import { wrapOpenAI, setSessionId, setSessionTags, clearSessionId } from "tenet-ai";
+
+const wrapped = wrapOpenAI(client, {
+  tenetKey: process.env.TENET_API_KEY,
+  sessionId: "caller_123",
+  sessionTags: ["beta"],
+});
+
+// Update per-call
+setSessionId(client, "caller_456");
+setSessionTags(client, ["beta", "internal"]);
+clearSessionId(client);
+```
+
+`sessionId` is sent as `X-Tenet-Session-Id` and `sessionTags` as a comma-joined `X-Tenet-Session-Tags` header, used for sticky per-caller A/B routing in the inference proxy.
 
 ## How It Works
 
