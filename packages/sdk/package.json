@@ -21,7 +21,7 @@
   "devDependencies": {
     "openai": "^4.104.0",
     "typescript": "^5.0.0",
-    "vitest": "^2.0.0"
+    "vitest": "^3.2.7"
   },
   "license": "MIT"
 }
