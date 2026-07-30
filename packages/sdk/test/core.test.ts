@@ -9,6 +9,16 @@ function mockFetch(status = 200, body: any = { choices: [{ message: { content: "
 }
 
 describe("createTenetFetch", () => {
+  it("rejects invalid transport configuration", () => {
+    expect(() => createTenetFetch({
+      innerFetch: mockFetch(),
+      tenetKey: "",
+      proxyUrl: "not-a-url",
+      originalBaseUrl: "https://api.openai.com/v1",
+      failover: false,
+    })).toThrow();
+  });
+
   it("rewrites URL to proxy", async () => {
     const inner = mockFetch();
     const fetch = createTenetFetch({
@@ -215,5 +225,12 @@ describe("createTenetFetch", () => {
     });
 
     expect(resp.status).toBe(502);
+  });
+});
+
+describe("wrap", () => {
+  it("rejects invalid public options before mutating the client", () => {
+    const client = { fetch: mockFetch(), baseURL: "https://api.openai.com/v1" };
+    expect(() => wrap(client, { tenetKey: "", sessionTags: [""] })).toThrow();
   });
 });

@@ -18,6 +18,9 @@
   "peerDependencies": {
     "openai": ">=4.0.0"
   },
+  "dependencies": {
+    "zod": "^3.25.76"
+  },
   "devDependencies": {
     "openai": "^4.104.0",
     "typescript": "^5.0.0",
