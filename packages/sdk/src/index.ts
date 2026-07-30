@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { createTenetFetch, type TenetFetchOptions } from "./transport.js";
 
 export { createTenetFetch, type TenetFetchOptions };
@@ -13,30 +14,43 @@ interface WrapOptions {
   sessionTags?: string[];
 }
 
+const wrapOptionsSchema = z.object({
+  tenetKey: z.string().trim().min(1, "tenetKey is required"),
+  failover: z.boolean().optional(),
+  proxyUrl: z.string().url().optional(),
+  timeout: z.number().positive().optional(),
+  sessionId: z.string().trim().min(1).optional(),
+  sessionTags: z.array(z.string().trim().min(1)).optional(),
+}).strict();
+
+const sessionIdSchema = z.string().trim().min(1, "sessionId is required");
+const sessionTagsSchema = z.array(z.string().trim().min(1));
+
 const sessionIds = new WeakMap<object, string>();
 const sessionTagsMap = new WeakMap<object, string[]>();
 
 export function wrap<T extends object>(client: T, opts: WrapOptions): T {
+  const validated = wrapOptionsSchema.parse(opts);
   const c = client as any;
   const originalFetch = c.fetch ?? c._fetch ?? globalThis.fetch;
   const originalBaseUrl = (c.baseURL ?? "https://api.openai.com/v1").replace(/\/$/, "");
-  const proxyUrl = (opts.proxyUrl ?? DEFAULT_PROXY_URL).replace(/\/$/, "");
+  const proxyUrl = (validated.proxyUrl ?? DEFAULT_PROXY_URL).replace(/\/$/, "");
 
-  const fallbackFetch = opts.failover !== false ? originalFetch : undefined;
+  const fallbackFetch = validated.failover !== false ? originalFetch : undefined;
 
-  if (opts.sessionId) {
-    sessionIds.set(client, opts.sessionId);
+  if (validated.sessionId) {
+    sessionIds.set(client, validated.sessionId);
   }
-  if (opts.sessionTags) {
-    sessionTagsMap.set(client, opts.sessionTags);
+  if (validated.sessionTags) {
+    sessionTagsMap.set(client, validated.sessionTags);
   }
 
   const tenetFetch = createTenetFetch({
     innerFetch: originalFetch,
-    tenetKey: opts.tenetKey,
+    tenetKey: validated.tenetKey,
     proxyUrl,
     originalBaseUrl,
-    failover: opts.failover !== false,
+    failover: validated.failover !== false,
     fallbackFetch,
     getSessionId: () => sessionIds.get(client),
     getSessionTags: () => sessionTagsMap.get(client),
@@ -51,7 +65,7 @@ export function wrap<T extends object>(client: T, opts: WrapOptions): T {
 }
 
 export function setSessionId(client: object, sessionId: string) {
-  sessionIds.set(client, sessionId);
+  sessionIds.set(client, sessionIdSchema.parse(sessionId));
 }
 
 export function clearSessionId(client: object) {
@@ -59,7 +73,7 @@ export function clearSessionId(client: object) {
 }
 
 export function setSessionTags(client: object, sessionTags: string[]) {
-  sessionTagsMap.set(client, sessionTags);
+  sessionTagsMap.set(client, sessionTagsSchema.parse(sessionTags));
 }
 
 export function clearSessionTags(client: object) {

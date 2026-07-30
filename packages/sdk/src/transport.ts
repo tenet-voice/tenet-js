@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export interface TenetFetchOptions {
   innerFetch: typeof fetch;
   tenetKey: string;
@@ -9,7 +11,28 @@ export interface TenetFetchOptions {
   getSessionTags?: () => string[] | undefined;
 }
 
+const fetchFunctionSchema = z.custom<typeof fetch>(
+  (value) => typeof value === "function",
+  "A fetch implementation is required",
+);
+
+const tenetFetchOptionsSchema = z.object({
+  innerFetch: fetchFunctionSchema,
+  tenetKey: z.string().trim().min(1, "tenetKey is required"),
+  proxyUrl: z.string().url(),
+  originalBaseUrl: z.string().url(),
+  failover: z.boolean(),
+  fallbackFetch: fetchFunctionSchema.optional(),
+  getSessionId: z.custom<() => string | undefined>(
+    (value) => typeof value === "function",
+  ).optional(),
+  getSessionTags: z.custom<() => string[] | undefined>(
+    (value) => typeof value === "function",
+  ).optional(),
+}).strict();
+
 export function createTenetFetch(opts: TenetFetchOptions): typeof fetch {
+  const validated = tenetFetchOptionsSchema.parse(opts);
   const {
     innerFetch,
     tenetKey,
@@ -19,7 +42,7 @@ export function createTenetFetch(opts: TenetFetchOptions): typeof fetch {
     fallbackFetch,
     getSessionId,
     getSessionTags,
-  } = opts;
+  } = validated;
 
   return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const originalUrl = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
