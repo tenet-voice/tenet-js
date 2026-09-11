@@ -24,7 +24,7 @@
     "@livekit/rtc-node": "^0.13.32",
     "@tenet-voice/sdk": "workspace:*",
     "typescript": "^5.0.0",
-    "vitest": "^3.2.7"
+    "vitest": "^4.1.11"
   },
   "license": "MIT"
 }
