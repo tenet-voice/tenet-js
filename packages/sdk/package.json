@@ -19,12 +19,13 @@
     "openai": ">=4.0.0"
   },
   "dependencies": {
-    "zod": "^3.25.76"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "openai": "^4.104.0",
     "typescript": "^5.0.0",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.12",
+    "vite": "6.4.5"
   },
   "license": "MIT"
 }
